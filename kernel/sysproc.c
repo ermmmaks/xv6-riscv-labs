@@ -110,3 +110,17 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+uint64
+sys_add(void)
+{
+  int first_num;
+  int second_num;
+
+  argint(0, &first_num);
+  argint(1, &second_num);
+
+  printk("sys_add: складываем %d и %d\n", first_num, second_num);
+
+  return first_num + second_num;
+}
