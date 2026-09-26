@@ -104,6 +104,7 @@ extern uint64 sys_mkdir(void);
 extern uint64 sys_close(void);
 extern uint64 sys_sync(void);
 extern uint64 sys_add(void);
+extern uint64 sys_ps_listinfo(void);
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -131,7 +132,9 @@ static uint64 (*syscalls[])(void) = {
   [SYS_mkdir]   = sys_mkdir,
   [SYS_close]   = sys_close,
   [SYS_sync]    = sys_sync,
-  [SYS_add]    = sys_add,
+  [SYS_add]     = sys_add,
+  [SYS_close]   = sys_close,
+  [SYS_ps_listinfo] = sys_ps_listinfo,
   // clang-format on
 };
 
@@ -151,3 +154,5 @@ syscall(void)
     p->trapframe->a0 = -1;
   }
 }
+
+

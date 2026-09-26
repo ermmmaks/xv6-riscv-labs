@@ -26,6 +26,7 @@ int pause(int);
 int uptime(void);
 int sync(void);
 int add(int, int);
+int ps_listinfo(struct procinfo*, int);
 
 // ulib.c
 int stat(const char *, struct stat *);
