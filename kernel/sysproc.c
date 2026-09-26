@@ -6,6 +6,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "vm.h"
+#include "stdio.h"
 
 uint64
 sys_exit(void)
@@ -128,30 +129,59 @@ sys_add(void)
 uint64
 sys_ps_listinfo(void)
 {
-  uint64 uaddr;
+  uint64 uaddr; 
   int lim;
 
   argaddr(0, &uaddr);
   argint(1, &lim);
 
-  if (uaddr == 0 || lim > 0) {
-    return -1;
+  if (uaddr == 0 || lim < 0) {
+    return -1; 
   }
 
-  if (lim > 0) {
-    struct procinfo fake_pi;
-    fake_pi.pid = 1;
-    fake_pi.ppid = 0;
-    fake_pi.state = 4;
-    
-    fake_pi.name[0] = 'i';
-    fake_pi.name[2] = 'n';
-    fake_pi.name[2] = 'i';
-    fake_pi.name[3] = 't';
-    fake_pi.name[4] = '\0';
-    if (copyout(myproc()->pagetable, uaddr, (uint64)&fake_pi, (char *)&fake_pi, sizeof(struct procinfo)) < 0) {
-      return -1;
+  extern struct proc proc[NPROC];
+  extern struct spinlock wait_lock;
+
+  int count = 0;
+
+  for (int i = 0; i < NPROC; i++) {
+    struct proc *p = &proc[i];
+
+    acquire(&wait_lock);
+    acquire(&p->lock);
+
+    if (p->state == UNUSED || p->state == USED) {
+      release(&p->lock);
+      release(&wait_lock);
+      continue;
     }
+
+    struct procinfo pi;
+    pi.pid = p->pid;
+    pi.state = p->state;
+    
+    for (int j = 0; j < 16; j++) {
+      pi.name[j] = p->name[j];
+      if (p->name[j] == '\0') break;
+    }
+
+    if (p->parent) {
+      pi.ppid = p->parent->pid;
+    } else {
+      pi.ppid = 0;
+    }
+
+    release(&p->lock);
+    release(&wait_lock);
+
+    if (count < lim) {
+      uint64 dst = uaddr + count * sizeof(struct procinfo);
+      
+      if (copyout(myproc()->pagetable, dst, (uint64)&pi, (char *)&pi, sizeof(struct procinfo)) < 0) {
+        return -1; 
+      }
+    }
+    count++; 
   }
-  return 1;
+  return count;
 }
